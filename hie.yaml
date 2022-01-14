@@ -1,0 +1,19 @@
+cradle:
+  cabal:
+    - path: "src/Main.hs"
+      component: "rabin:exe:rabin"
+
+    - path: "src/Rabin/Utils.hs"
+      component: "rabin:exe:rabin"
+
+    - path: "src/Rabin/KeyGen.hs"
+      component: "rabin:exe:rabin"
+
+    - path: "src/Rabin/Encryption.hs"
+      component: "rabin:exe:rabin"
+
+    - path: "src/Rabin/Encoding.hs"
+      component: "rabin:exe:rabin"
+
+    - path: "src/Opts.hs"
+      component: "rabin:exe:rabin"
