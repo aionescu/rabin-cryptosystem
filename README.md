@@ -9,30 +9,33 @@ Haskell implementation of Rabin's Public Key Cryptosystem, written for the Publi
 
 (Both can be installed via [ghcup](https://www.haskell.org/ghcup/))
 
-## Running the project
+## Installing & Running
 
-You can use the provided `run.sh` script to run the project.
-It will also build it when it's run for the first time.
+To install the project, simply run `cabal install`. Afterwards, you can simply run it as `rabin`.
+
+If you don't want to install it, you can run it locally using the provided `run.sh` script.
 
 ## CLI Interface
 
 ```sh
-./run.sh gen-priv-key [--bits N] # Writes the binary-encoded private key to stdout. Defaults to 256 bits
-./run.sh gen-pub-key # Reads the private key from stdin, writes the public key to stdout
-./run.sh encrypt --pub-key PATH # Reads the plaintext message from stdin, writes the ciphertext to stdout
-./run.sh decrypt --priv-key PATH # Reads the ciphertext from stdin, writes the cypheretext to stdout
+rabin gen-priv-key [--bits N] # Writes the binary-encoded private key to stdout. Defaults to 256 bits
+rabin gen-pub-key # Reads the private key from stdin, writes the public key to stdout
+rabin encrypt --pub-key PATH # Reads the plaintext message from stdin, writes the ciphertext to stdout
+rabin decrypt --priv-key PATH # Reads the ciphertext from stdin, writes the cypheretext to stdout
 ```
+
+If you haven't installed the project, use `./run.sh` instead of `rabin`.
 
 ## Example usage
 
 ```sh
 # Generate private/public key pair
-./run.sh gen-priv-key >a.key
-./run.sh gen-pub-key <a.key >a.pub
+rabin gen-priv-key >a.key
+rabin gen-pub-key <a.key >a.pub
 
 # Encrypt a file, e.g. an image
-./run.sh encrypt --pub-key a.pub <image.png >image.enc
-./run.sh decrypt --priv-key a.key <image.enc >decrypted.png
+rabin encrypt --pub-key a.pub <image.png >image.enc
+rabin decrypt --priv-key a.key <image.enc >decrypted.png
 ```
 
 ## Security Notice
