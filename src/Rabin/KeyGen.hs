@@ -19,7 +19,7 @@ millerRabin k n g
   | n == 1 = pure False
   | n == 2 = pure True
   | even n = pure False
-  | k < 9 = pure True
+  | n < 9 = pure True
   | otherwise = not <$> orM (replicate k testRound)
   where
     (d, s) = exp2 n
