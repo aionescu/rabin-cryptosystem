@@ -6,10 +6,9 @@ import Data.ByteString.Lazy(ByteString)
 import Data.ByteString.Lazy qualified as B
 import Data.Int(Int64)
 import Data.Maybe(mapMaybe)
-import Data.Word(Word8)
 
 import Rabin.Encryption(decrypt, encrypt)
-import Rabin.Utils((%))
+import Rabin.Utils((%), (.>>.))
 
 decodeInteger :: ByteString -> Integer
 decodeInteger = B.foldl' (\i b -> (i `shiftL` 8) + fromIntegral b) 0
@@ -29,21 +28,16 @@ chunks k s
   where
     (chunk, rest) = B.splitAt k s
 
-chunksPadded :: Int64 -> Word8 -> ByteString -> [ByteString]
-chunksPadded k pad s
-  | B.null s = []
-  | B.length s < k = [s <> B.replicate (k - B.length s) pad]
-  | otherwise = chunk : chunksPadded k pad rest
-  where
-    (chunk, rest) = B.splitAt k s
-
 toBlocks :: Int64 -> ByteString -> [ByteString]
-toBlocks blockSize bs = chunksPadded blockSize 0 (B.cons padding bs)
+toBlocks blockSize bs =
+  chunks blockSize
+  $ B.cons (fromIntegral padding) bs
+  <> B.replicate padding 0
   where
-    extra = (B.length bs + 1) % blockSize
-    padding
-      | extra == 0 = 0
-      | otherwise = fromIntegral $ blockSize - extra
+    padding =
+      case (B.length bs + 1) % blockSize of
+        0 -> 0
+        extra -> blockSize - extra
 
 ofBlocks :: Int64 -> ByteString -> [ByteString]
 ofBlocks cipherSize bs
@@ -98,4 +92,6 @@ decryptBytes (encodingInfo -> (blockSize, redundancy, cipherSize)) p q =
   . ofBlocks cipherSize
 
 encodingInfo :: Int64 -> (Int64, Int64, Int64)
-encodingInfo pubKeyBytes = (pubKeyBytes - 3, 2, pubKeyBytes)
+encodingInfo pubKeyBytes = (pubKeyBytes - redundancy - 1, redundancy, pubKeyBytes)
+  where
+    redundancy = pubKeyBytes .>>. 4
