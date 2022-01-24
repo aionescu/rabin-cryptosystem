@@ -1,11 +1,10 @@
-module Rabin.Encoding(encryptBytes, decryptBytes, encodeInteger, decodeInteger, encodingInfo) where
+module Rabin.Encoding(encryptBytes, decryptBytes, encodeInteger, decodeInteger) where
 
 import Control.Category((>>>))
-import Data.Bits(shiftL, shiftR)
+import Data.Bits(shiftL, shiftR, (.&.))
 import Data.ByteString.Lazy(ByteString)
 import Data.ByteString.Lazy qualified as B
 import Data.Int(Int64)
-import Data.Maybe(mapMaybe)
 
 import Rabin.Encryption(decrypt, encrypt)
 import Rabin.Utils((%), (.>>.))
@@ -19,7 +18,7 @@ encodeInteger size i = B.replicate (size - B.length bs) 0 <> bs
     bs = B.reverse $ B.unfoldr f i
 
     f 0 = Nothing
-    f s = Just (fromIntegral $ s % 256, s `shiftR` 8)
+    f s = Just (fromIntegral $ s .&. 255, s `shiftR` 8)
 
 chunks :: Int64 -> ByteString -> [ByteString]
 chunks k s
@@ -55,7 +54,7 @@ addRedundancy amount b = B.take amount b <> b
 
 checkRedundancy :: Int64 -> ByteString -> Maybe ByteString
 checkRedundancy amount b
-  | b0 == B.take amount b' = Just b'
+  | b0 `B.isPrefixOf` b' = Just b'
   | otherwise = Nothing
   where
     (b0, b') = B.splitAt amount b
@@ -68,17 +67,20 @@ encryptBlock cipherSize redundancy n =
   . addRedundancy redundancy
 
 decryptBlock :: Int64 -> Int64 -> Integer -> Integer -> ByteString -> ByteString
-decryptBlock blockSize redundancy p q =
-  disambiguate
-  . mapMaybe removeRedundancy
-  . decrypt p q
-  . decodeInteger
+decryptBlock blockSize redundancy p q block =
+  disambiguate (decrypt p q $ decodeInteger block)
   where
     removeRedundancy = checkRedundancy redundancy . encodeInteger (redundancy + blockSize)
-    disambiguate = \case
-      [] -> error "decryptBlock: No square roots"
-      [m] -> m
-      _ -> error "decryptBlock: Multiple square roots"
+
+    disambiguate :: (# Integer, Integer, Integer, Integer #) -> ByteString
+    disambiguate (# a, b, c, d #) =
+      case (# removeRedundancy a, removeRedundancy b, removeRedundancy c, removeRedundancy d #) of
+        (# Just bs, Nothing, Nothing, Nothing #) -> bs
+        (# Nothing, Just bs, Nothing, Nothing #) -> bs
+        (# Nothing, Nothing, Just bs, Nothing #) -> bs
+        (# Nothing, Nothing, Nothing, Just bs #) -> bs
+        (# Nothing, Nothing, Nothing, Nothing #) -> error "decryptBlock: No square roots"
+        _ -> error "decryptBlock: Multiple square roots"
 
 encryptBytes :: Int64 -> Integer -> ByteString -> ByteString
 encryptBytes (encodingInfo -> (blockSize, redundancy, cipherSize)) n =
