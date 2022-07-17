@@ -5,7 +5,7 @@ import Data.Bits((.|.), bit, shiftL, shiftR, testBit)
 import System.Random.MWC(create, createSystemRandom)
 import System.Random.Stateful(StatefulGen, uniformRM)
 
-import Rabin.Utils(pow)
+import Rabin.Utils(powMod)
 
 exp2 :: Integer -> (Integer, Integer)
 exp2 n = go (n - 1) 0
@@ -23,7 +23,7 @@ millerRabin k n g
   | otherwise = not <$> orM (replicate k testRound)
   where
     (d, s) = exp2 n
-    trialComposite a = pow a d n /= 1 && not (any (\i -> pow a (2^i * d) n == n - 1) [0 .. s - 1])
+    trialComposite a = powMod a d n /= 1 && not (any (\i -> powMod a (2^i * d) n == n - 1) [0 .. s - 1])
     testRound = trialComposite <$> uniformRM (2, n - 1) g
 
 randomBits :: StatefulGen g m => Int -> g -> m Integer

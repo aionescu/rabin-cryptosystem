@@ -1,8 +1,9 @@
-{-# OPTIONS_GHC -Wno-deprecations  #-}
-
 module Rabin.Utils where
 
-import GHC.Integer.GMP.Internals(powModInteger)
+import GHC.Num(integerPowMod#)
 
-pow :: Integer -> Integer -> Integer -> Integer
-pow = powModInteger
+powMod :: Integer -> Integer -> Integer -> Integer
+powMod b e n =
+  case integerPowMod# b e (fromInteger n) of
+    (# | () #) -> error "powMod: negative e or zero n"
+    (# r | #) -> fromIntegral r
