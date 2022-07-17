@@ -79,7 +79,7 @@ decryptBlock blockSize redundancy p q block =
         (# Nothing, Nothing, Just bs, Nothing #) -> bs
         (# Nothing, Nothing, Nothing, Just bs #) -> bs
         (# Nothing, Nothing, Nothing, Nothing #) -> error "decryptBlock: No square roots"
-        _ -> error "decryptBlock: Multiple square roots"
+        _                                        -> error "decryptBlock: Multiple square roots"
 
 encryptBytes :: Int64 -> Integer -> ByteString -> ByteString
 encryptBytes (encodingInfo -> (blockSize, redundancy, cipherSize)) n =

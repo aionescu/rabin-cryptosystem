@@ -8,16 +8,16 @@ import System.Exit(exitFailure)
 import System.IO(stdout)
 
 import Opts(Opts(..), getOpts)
-import Rabin.KeyGen(genKey)
+import Rabin.KeyGen(Key(..), genKey)
 import Rabin.Encoding(decodeInteger, encodeInteger, decryptBytes, encryptBytes)
 
-genPrivKey :: Bool -> Int -> IO ()
-genPrivKey fixedSeed bits = do
+genPrivKey :: Bool -> Int -> Int -> IO ()
+genPrivKey fixedSeed tests bits = do
   when (bits `notElem` [128, 256, 512, 1024]) do
     putStrLn "Error: Private key size must be 128, 256, 512 or 1024"
     exitFailure
 
-  (p, q) <- genKey fixedSeed bits
+  Key p q <- genKey fixedSeed tests bits
   let privKeySize = fromIntegral $ bits `shiftR` 4
 
   B.hPut stdout $ encodeInteger privKeySize p <> encodeInteger privKeySize q
@@ -28,8 +28,8 @@ genPubKey = do
   let
     pubKeySize = B.length privKey
     privKeySize = pubKeySize `shiftR` 1
+    (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize privKey
 
-  let (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize privKey
   B.hPut stdout $ encodeInteger pubKeySize $ p * q
 
 encrypt :: FilePath -> IO ()
@@ -49,13 +49,12 @@ decrypt privKey = do
   let (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize bin
 
   msg <- B.getContents
-
   B.hPut stdout $ decryptBytes pubKeySize p q msg
 
 main :: IO ()
 main =
   getOpts >>= \case
-    GenPrivKey{..} -> genPrivKey fixedSeed bits
+    GenPrivKey{..} -> genPrivKey fixedSeed tests bits
     GenPubKey -> genPubKey
     Encrypt{..} -> encrypt pubKey
     Decrypt{..} -> decrypt privKey

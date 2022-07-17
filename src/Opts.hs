@@ -7,7 +7,8 @@ import Options.Generic
 data Opts w
   = GenPrivKey
     { bits :: w ::: Int <!> "256" <?> "Length of the private key, in bits"
-    , fixedSeed :: w ::: Bool <?> "Use a fixed RNG seed. USE ONLY FOR TESTING."
+    , tests :: w ::: Int <!> "64" <?> "The number of Miller-Rabin trial rounds"
+    , fixedSeed :: w ::: Bool <?> "Use a fixed RNG seed. USE ONLY FOR TESTING!"
     }
   | GenPubKey
   | Encrypt { pubKey :: w ::: FilePath <?> "Path to the public key file" }
