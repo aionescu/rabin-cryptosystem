@@ -9,7 +9,7 @@ bug-reports: https://github.com/aionescu/rabin-cryptosystem/issues
 license: GPL-3.0-only
 license-file: LICENSE.txt
 maintainer: alxi.2001@gmail.com
-copyright: Copyright (C) 2021 Alex Ionescu
+copyright: Copyright (C) 2022 Alex Ionescu
 category: Encryption
 build-type: Simple
 extra-source-files: README.md
@@ -30,6 +30,7 @@ executable rabin
     base >=4.15 && <5
     , bytestring ^>= 0.11.2
     , extra ^>= 1.7.10
+    , integer-gmp ^>= 1.1
     , mwc-random ^>= 0.15
     , random ^>= 1.2.1
     , optparse-generic ^>= 1.4.7
@@ -39,11 +40,17 @@ executable rabin
     -rtsopts
     -with-rtsopts=-N
     -Wall
+    -Wcompat
     -Wincomplete-uni-patterns
     -Wprepositive-qualified-module
     -Wmissing-deriving-strategies
     -Wunused-packages
-    -Wno-star-is-type
+    -Widentities
+    -Wredundant-constraints
+    -Wunticked-promoted-constructors
+    -Wpartial-fields
+    -Wmissing-exported-signatures
+    -Wno-name-shadowing
 
   default-extensions:
     ApplicativeDo
@@ -74,7 +81,9 @@ executable rabin
     MultiParamTypeClasses
     MultiWayIf
     NamedFieldPuns
+    NoMonomorphismRestriction
     OverloadedStrings
+    PartialTypeSignatures
     PatternSynonyms
     RankNTypes
     RecordWildCards

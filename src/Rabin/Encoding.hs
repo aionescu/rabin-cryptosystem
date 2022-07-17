@@ -7,7 +7,6 @@ import Data.ByteString.Lazy qualified as B
 import Data.Int(Int64)
 
 import Rabin.Encryption(decrypt, encrypt)
-import Rabin.Utils((%), (.>>.))
 
 decodeInteger :: ByteString -> Integer
 decodeInteger = B.foldl' (\i b -> (i `shiftL` 8) + fromIntegral b) 0
@@ -34,13 +33,13 @@ toBlocks blockSize bs =
   <> B.replicate padding 0
   where
     padding =
-      case (B.length bs + 1) % blockSize of
+      case (B.length bs + 1) `mod` blockSize of
         0 -> 0
         extra -> blockSize - extra
 
 ofBlocks :: Int64 -> ByteString -> [ByteString]
 ofBlocks cipherSize bs
-  | B.length bs % cipherSize /= 0 = error "ofBlocks: Invalid block size"
+  | B.length bs `mod` cipherSize /= 0 = error "ofBlocks: Invalid block size"
   | otherwise = chunks cipherSize bs
 
 removePadding :: ByteString -> ByteString
@@ -96,4 +95,4 @@ decryptBytes (encodingInfo -> (blockSize, redundancy, cipherSize)) p q =
 encodingInfo :: Int64 -> (Int64, Int64, Int64)
 encodingInfo pubKeyBytes = (pubKeyBytes - redundancy - 1, redundancy, pubKeyBytes)
   where
-    redundancy = pubKeyBytes .>>. 4
+    redundancy = pubKeyBytes `shiftR` 4

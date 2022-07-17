@@ -1,7 +1,9 @@
 module Rabin.Encryption(encrypt, decrypt) where
 
-import Rabin.Utils((%), (.>>.), pow)
+import Data.Bits(shiftR)
 import GHC.Integer(divModInteger)
+
+import Rabin.Utils(pow)
 
 egcd :: Integer -> Integer -> (# Integer, Integer #)
 egcd 0 _ = (# 0, 1 #)
@@ -18,16 +20,16 @@ chineseRemainder p q r s = (# x, n - x, y, n - y #)
     (# c, d #) = egcd p q
     rdq = r * d * q
     scp = s * c * p
-    x = (rdq + scp) % n
-    y = (rdq - scp) % n
+    x = (rdq + scp) `mod` n
+    y = (rdq - scp) `mod` n
 {-# INLINE chineseRemainder #-}
 
 modSqrt :: Integer -> Integer -> Integer
-modSqrt a p = pow a (p + 1 .>>. 2) p
+modSqrt a p = pow a ((p + 1) `shiftR` 2) p
 {-# INLINE modSqrt #-}
 
 encrypt :: Integer -> Integer -> Integer
-encrypt n m = m * m % n
+encrypt n m = pow m 2 n
 {-# INLINE encrypt #-}
 
 decrypt :: Integer -> Integer -> Integer -> (# Integer, Integer, Integer, Integer #)

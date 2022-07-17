@@ -1,4 +1,2 @@
-#!/usr/bin/env bash
-set -euo pipefail
-
+#!/bin/sh
 cabal run -O2 -v0 . -- "$@"

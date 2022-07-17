@@ -1,16 +1,21 @@
+{-# OPTIONS_GHC -Wno-partial-fields #-}
+
 module Opts(Opts(..), getOpts) where
 
 import Options.Generic
 
-data Opts
-  = GenPrivKey { bits :: Maybe Int }
+data Opts w
+  = GenPrivKey
+    { bits :: w ::: Int <!> "256" <?> "Length of the private key, in bits"
+    , fixedSeed :: w ::: Bool <?> "Use a fixed RNG seed. USE ONLY FOR TESTING."
+    }
   | GenPubKey
-  | Encrypt { pubKey :: FilePath }
-  | Decrypt { privKey :: FilePath }
+  | Encrypt { pubKey :: w ::: FilePath <?> "Path to the public key file" }
+  | Decrypt { privKey :: w ::: FilePath <?> "Path to the private key file" }
   deriving stock Generic
 
-instance ParseRecord Opts where
+instance ParseRecord (Opts Wrapped) where
   parseRecord = parseRecordWithModifiers lispCaseModifiers
 
-getOpts :: IO Opts
-getOpts = getRecord "Rabin Cryptosystem"
+getOpts :: IO (Opts Unwrapped)
+getOpts = unwrapRecord "Rabin Cryptosystem"
