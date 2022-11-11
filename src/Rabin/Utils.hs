@@ -1,9 +1,10 @@
 module Rabin.Utils where
 
-import GHC.Num(integerPowMod#)
+import GHC.Num(integerPowMod#, integerToNatural)
 
 powMod :: Integer -> Integer -> Integer -> Integer
 powMod b e n =
-  case integerPowMod# b e (fromInteger n) of
-    (# | () #) -> error "powMod: negative e or zero n"
+  case integerPowMod# b e (integerToNatural n) of
+    (# | _ #) -> error "powMod: negative e or zero n"
     (# r | #) -> fromIntegral r
+{-# INLINE powMod #-}
