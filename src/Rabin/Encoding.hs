@@ -49,18 +49,22 @@ ofBlocks f cipherSize bs
   | otherwise = B.dropWhileEnd (== eot) $ chunks f cipherSize bs
 {-# INLINE ofBlocks #-}
 
-addRedundancy :: Int64 -> ByteString -> ByteString
-addRedundancy amount b = B.take amount b <> b
+-- https://www.diva-portal.org/smash/get/diva2:1581080/FULLTEXT01.pdf
+-- This paper experimentally shows that padding the message between 1's
+-- produces very low collision rates. The paper seems to do the padding
+-- in decimal, but I'm doing it in binary here, padding with 255's (i.e. all-1 bytes).
+addRedundancy :: ByteString -> ByteString -> ByteString
+addRedundancy padding b = padding <> b <> padding
 
 checkRedundancy :: Int64 -> ByteString -> (# ByteString | () #)
 checkRedundancy amount b
-  | b0 `B.isPrefixOf` b' = (# b' | #)
+  | B.all (== 255) (B.take half b) && B.all (== 255) (B.takeEnd half b) = (# B.drop half (B.dropEnd half b) | #)
   | otherwise = (# | () #)
   where
-    (b0, b') = B.splitAt amount b
+    half = amount .>>. 1
 
-encryptBlock :: Int64 -> Int64 -> Integer -> ByteString -> ByteString
-encryptBlock cipherSize redundancy n =
+encryptBlock :: Int64 -> Integer -> ByteString -> ByteString -> ByteString
+encryptBlock cipherSize n redundancy =
   encodeInteger cipherSize
   . encrypt n
   . decodeInteger
@@ -87,7 +91,9 @@ decryptBlock blockSize redundancy p q block =
 
 encryptBytes :: Int64 -> Integer -> ByteString -> ByteString
 encryptBytes (encodingInfo -> (# blockSize, redundancy, cipherSize #)) n =
-  toBlocks (encryptBlock cipherSize redundancy n) blockSize
+  toBlocks (encryptBlock cipherSize n padding) blockSize
+  where
+    padding = B.replicate (redundancy .>>. 1) 255
 
 decryptBytes :: Int64 -> Integer -> Integer -> ByteString -> ByteString
 decryptBytes (encodingInfo -> (# blockSize, redundancy, cipherSize #)) p q =
