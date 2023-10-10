@@ -4,8 +4,8 @@ Haskell implementation of Rabin's Public Key Cryptosystem, written for the Publi
 
 ## Prerequisites
 
-* GHC >= 9.0
-* cabal >= 3.6
+* GHC >= 9.6
+* cabal >= 3.10
 
 (Both can be installed via [ghcup](https://www.haskell.org/ghcup/))
 
