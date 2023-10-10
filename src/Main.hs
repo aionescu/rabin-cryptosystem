@@ -1,8 +1,8 @@
 module Main(main) where
 
-import Control.Monad(when)
+import Control.Monad(unless)
 import Data.Bifunctor(bimap)
-import Data.Bits(shiftR)
+import Data.Bits((.>>.))
 import Data.ByteString.Lazy qualified as B
 import System.Exit(exitFailure)
 import System.IO(stdout)
@@ -13,12 +13,12 @@ import Rabin.Encoding(decodeInteger, encodeInteger, decryptBytes, encryptBytes)
 
 genPrivKey :: Bool -> Int -> Int -> IO ()
 genPrivKey fixedSeed tests bits = do
-  when (bits `notElem` [128, 256, 512, 1024]) do
+  unless (bits `elem` [128, 256, 512, 1024]) do
     putStrLn "Error: Private key size must be 128, 256, 512 or 1024"
     exitFailure
 
   Key p q <- genKey fixedSeed tests bits
-  let privKeySize = fromIntegral $ bits `shiftR` 4
+  let privKeySize = fromIntegral $ bits .>>. 4
 
   B.hPut stdout $ encodeInteger privKeySize p <> encodeInteger privKeySize q
 
@@ -27,7 +27,7 @@ genPubKey = do
   privKey <- B.getContents
   let
     pubKeySize = B.length privKey
-    privKeySize = pubKeySize `shiftR` 1
+    privKeySize = pubKeySize .>>. 1
     (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize privKey
 
   B.hPut stdout $ encodeInteger pubKeySize $ p * q
@@ -45,7 +45,7 @@ decrypt privKey = do
   bin <- B.readFile privKey
 
   let pubKeySize = B.length bin
-  let privKeySize = pubKeySize `shiftR` 1
+  let privKeySize = pubKeySize .>>. 1
   let (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize bin
 
   msg <- B.getContents

@@ -1,6 +1,6 @@
 module Rabin.Encoding(encryptBytes, decryptBytes, encodeInteger, decodeInteger) where
 
-import Data.Bits(shiftL, shiftR, (.&.))
+import Data.Bits((.<<.), (.>>.))
 import Data.ByteString.Lazy(ByteString)
 import Data.ByteString.Lazy qualified as B
 import Data.Int(Int64)
@@ -8,7 +8,7 @@ import Data.Int(Int64)
 import Rabin.Encryption(decrypt, encrypt)
 
 decodeInteger :: ByteString -> Integer
-decodeInteger = B.foldl' (\i b -> (i `shiftL` 8) + fromIntegral b) 0
+decodeInteger = B.foldl' (\i b -> (i .<<. 8) + fromIntegral b) 0
 
 encodeInteger :: Int64 -> Integer -> ByteString
 encodeInteger size i = B.replicate (size - B.length bs) 0 <> bs
@@ -16,7 +16,7 @@ encodeInteger size i = B.replicate (size - B.length bs) 0 <> bs
     bs = B.reverse $ B.unfoldr f i
 
     f 0 = Nothing
-    f s = Just (fromIntegral $ s .&. 255, s `shiftR` 8)
+    f s = Just (fromInteger s, s .>>. 8)
 
 chunks :: (ByteString -> ByteString) -> Int64 -> ByteString -> ByteString
 chunks f k s
@@ -72,7 +72,8 @@ decryptBlock :: Int64 -> Int64 -> Integer -> Integer -> ByteString -> ByteString
 decryptBlock blockSize redundancy p q block =
   disambiguate (decrypt p q $ decodeInteger block)
   where
-    removeRedundancy c = checkRedundancy redundancy $ encodeInteger (redundancy + blockSize) c
+    fullBlockSize = redundancy + blockSize
+    removeRedundancy c = checkRedundancy redundancy $ encodeInteger fullBlockSize c
 
     disambiguate :: (# Integer, Integer, Integer, Integer #) -> ByteString
     disambiguate (# a, b, c, d #) =
@@ -95,4 +96,4 @@ decryptBytes (encodingInfo -> (# blockSize, redundancy, cipherSize #)) p q =
 encodingInfo :: Int64 -> (# Int64, Int64, Int64 #)
 encodingInfo pubKeyBytes = (# pubKeyBytes - redundancy - 1, redundancy, pubKeyBytes #)
   where
-    redundancy = pubKeyBytes `shiftR` 4
+    redundancy = pubKeyBytes .>>. 4
