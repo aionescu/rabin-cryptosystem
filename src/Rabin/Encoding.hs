@@ -1,9 +1,11 @@
 module Rabin.Encoding(encryptBytes, decryptBytes, encodeInteger, decodeInteger) where
 
 import Data.Bits((.<<.), (.>>.))
+import Data.ByteString.Internal(c2w)
 import Data.ByteString.Lazy(ByteString)
 import Data.ByteString.Lazy qualified as B
 import Data.Int(Int64)
+import Data.Word(Word8)
 
 import Rabin.Encryption(decrypt, encrypt)
 
@@ -26,29 +28,26 @@ chunks f k s
     (chunk, rest) = B.splitAt k s
 {-# INLINE chunks #-}
 
+eot :: Word8
+eot = c2w '\EOT'
+
 toBlocks :: (ByteString -> ByteString) -> Int64 -> ByteString -> ByteString
-toBlocks f blockSize bs =
-  chunks f blockSize
-  $ B.cons (fromIntegral padding) bs
-  <> B.replicate padding 0
+toBlocks f blockSize bs = chunks f blockSize $ pad blockSize bs
   where
-    padding =
-      case (B.length bs + 1) `mod` blockSize of
-        0 -> 0
-        extra -> blockSize - extra
+    pad :: Int64 -> ByteString -> ByteString
+    pad blockSize bs
+      | diff == 0 = bs
+      | otherwise = bs <> B.replicate (blockSize - diff) eot
+      where
+        diff = B.length bs `mod` blockSize
+    {-# INLINE pad #-}
 {-# INLINE toBlocks #-}
 
 ofBlocks :: (ByteString -> ByteString) -> Int64 -> ByteString -> ByteString
 ofBlocks f cipherSize bs
   | B.length bs `mod` cipherSize /= 0 = error "ofBlocks: Invalid block size"
-  | otherwise = removePadding $ chunks f cipherSize bs
+  | otherwise = B.dropWhileEnd (== eot) $ chunks f cipherSize bs
 {-# INLINE ofBlocks #-}
-
-removePadding :: ByteString -> ByteString
-removePadding b =
-  case B.uncons b of
-    Nothing -> error "removePadding: Empty list"
-    Just (padding, bs) -> B.dropEnd (fromIntegral padding) bs
 
 addRedundancy :: Int64 -> ByteString -> ByteString
 addRedundancy amount b = B.take amount b <> b
@@ -74,6 +73,7 @@ decryptBlock blockSize redundancy p q block =
   where
     fullBlockSize = redundancy + blockSize
     removeRedundancy c = checkRedundancy redundancy $ encodeInteger fullBlockSize c
+    {-# INLINE removeRedundancy #-}
 
     disambiguate :: (# Integer, Integer, Integer, Integer #) -> ByteString
     disambiguate (# a, b, c, d #) =
