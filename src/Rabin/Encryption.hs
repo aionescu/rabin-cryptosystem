@@ -1,9 +1,15 @@
-module Rabin.Encryption(encrypt, decrypt) where
+module Rabin.Encryption(powMod, encrypt, decrypt) where
 
 import Data.Bits((.>>.))
 import GHC.Integer(divModInteger)
+import GHC.Num(integerPowMod#, integerToNatural, integerFromNatural)
 
-import Rabin.Utils(powMod)
+powMod :: Integer -> Integer -> Integer -> Integer
+powMod b e n =
+  case integerPowMod# b e (integerToNatural n) of
+    (# | _ #) -> error "powMod: negative e or zero n"
+    (# r | #) -> integerFromNatural r
+{-# INLINE powMod #-}
 
 egcd :: Integer -> Integer -> (# Integer, Integer #)
 egcd 0 _ = (# 0, 1 #)

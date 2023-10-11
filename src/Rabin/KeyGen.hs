@@ -4,7 +4,7 @@ import Data.Bits((.|.), (.<<.), (.>>.), bit, testBit)
 import System.Random.MWC(create, createSystemRandom, GenIO)
 import System.Random.Stateful(uniformRM)
 
-import Rabin.Utils(powMod)
+import Rabin.Encryption(powMod)
 
 exp2 :: Integer -> (# Integer, Int #)
 exp2 n = go (n - 1) 0

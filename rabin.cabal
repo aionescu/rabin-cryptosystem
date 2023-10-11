@@ -72,7 +72,6 @@ executable rabin
   main-is: Main.hs
 
   other-modules:
-    Rabin.Utils
     Rabin.KeyGen
     Rabin.Encryption
     Rabin.Encoding

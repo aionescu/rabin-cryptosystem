@@ -5,7 +5,6 @@ import Data.Bifunctor(bimap)
 import Data.Bits((.>>.))
 import Data.ByteString.Lazy qualified as B
 import System.Exit(exitFailure)
-import System.IO(stdout)
 
 import Opts(Opts(..), getOpts)
 import Rabin.KeyGen(Key(..), genKey)
@@ -20,7 +19,7 @@ genPrivKey fixedSeed tests bits = do
   Key p q <- genKey fixedSeed tests bits
   let privKeySize = fromIntegral $ bits .>>. 4
 
-  B.hPut stdout $ encodeInteger privKeySize p <> encodeInteger privKeySize q
+  B.putStr $ encodeInteger privKeySize p <> encodeInteger privKeySize q
 
 genPubKey :: IO ()
 genPubKey = do
@@ -30,7 +29,7 @@ genPubKey = do
     privKeySize = pubKeySize .>>. 1
     (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize privKey
 
-  B.hPut stdout $ encodeInteger pubKeySize $ p * q
+  B.putStr $ encodeInteger pubKeySize $ p * q
 
 encrypt :: FilePath -> IO ()
 encrypt pubKey = do
@@ -38,7 +37,7 @@ encrypt pubKey = do
   msg <- B.getContents
 
   let n = decodeInteger nBin
-  B.hPut stdout $ encryptBytes (B.length nBin) n msg
+  B.putStr $ encryptBytes (B.length nBin) n msg
 
 decrypt :: FilePath -> IO ()
 decrypt privKey = do
@@ -49,7 +48,7 @@ decrypt privKey = do
   let (p, q) = bimap decodeInteger decodeInteger $ B.splitAt privKeySize bin
 
   msg <- B.getContents
-  B.hPut stdout $ decryptBytes pubKeySize p q msg
+  B.putStr $ decryptBytes pubKeySize p q msg
 
 main :: IO ()
 main =
